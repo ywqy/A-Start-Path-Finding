@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Grid.cs" />
+     <Compile Include="Assets\Heap.cs" />
      <Compile Include="Assets\Node.cs" />
      <Compile Include="Assets\PathFinding.cs" />
  <Reference Include="UnityEngine.UI">
