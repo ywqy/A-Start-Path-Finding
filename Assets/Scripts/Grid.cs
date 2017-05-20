@@ -8,7 +8,11 @@ public class Grid : MonoBehaviour {
 	public LayerMask unwalkableMask;
 	public Vector2 gridWorldSize;
 	public float nodeRadius;
+	public TerrainType[] walkableRegions;
+	LayerMask walkableMask;
+	Dictionary<int,int> walkableRegionsDictionary = new Dictionary<int, int>();
 	Node[,] grid;
+
 
 	float nodeDiameter;
 	int gridSizeX, gridSizeY;
@@ -20,6 +24,12 @@ public class Grid : MonoBehaviour {
 		nodeDiameter = 2 * nodeRadius;
 		gridSizeX = Mathf.RoundToInt (gridWorldSize.x / nodeDiameter);
 		gridSizeY = Mathf.RoundToInt (gridWorldSize.y / nodeDiameter);
+
+		foreach (TerrainType region in walkableRegions) {
+			walkableMask.value |= region.terrainMask.value;
+			walkableRegionsDictionary.Add ((int)Mathf.Log (region.terrainMask.value,2), region.terrainPenlty);
+		}
+
 		CreateGrid ();
 	}
 
@@ -38,7 +48,17 @@ public class Grid : MonoBehaviour {
 			for (int y = 0; y < gridSizeY; y++) {
 				Vector3 worldPoint = worldBottomLeft + new Vector3 (x * nodeDiameter + nodeRadius, 0, y * nodeDiameter + nodeRadius);
 				bool walkable = !(Physics.CheckSphere (worldPoint, nodeRadius, unwalkableMask));
-				grid [x, y] = new Node (walkable, worldPoint, x, y);
+				int movementPenalty = 0;
+
+				if (walkable) {
+					Ray ray = new Ray (worldPoint + Vector3.up * 50, Vector3.down);
+					RaycastHit hit;
+					if (Physics.Raycast (ray, out hit, 100, walkableMask)) {
+						walkableRegionsDictionary.TryGetValue (hit.collider.gameObject.layer, out movementPenalty);
+
+					}
+				}
+				grid [x, y] = new Node (walkable, worldPoint, x, y, movementPenalty);
 			}
 		}
 	}
@@ -81,6 +101,12 @@ public class Grid : MonoBehaviour {
 				Gizmos.DrawCube (node.worldPosition, Vector3.one * (nodeDiameter - 0.1f));
 			}
 		}		
+	}
+
+	[System.Serializable]
+	public class TerrainType {
+		public LayerMask terrainMask;
+		public int terrainPenlty;
 	}
 
 }
